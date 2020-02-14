@@ -70,3 +70,5 @@ def main():
         print('Files:')
         for item in items:
             print(u'{0} ({1})'.format(item['name'], item['id']))
+
+main()
