@@ -1,8 +1,5 @@
-from __future__ import print_function
 import requests
 import json
-import csv
-import pickle
 import os.path
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
@@ -13,7 +10,7 @@ def cwb():
     base='https://opendata.cwb.gov.tw/fileapi/v1/opendataapi/'
     dataid="O-A0001-001"
     stationid='466990'
-    elem="TEMP"
+    elem="TEMP,HUMD,PRES,SUN"
     form='JSON'
     limit=15
 
@@ -22,18 +19,29 @@ def cwb():
     print(res.status_code)
     d=json.loads(res.content.decode('utf-8'))
 
+    '''
     with open('weather.json','w') as f:
         json.dump(d,f)
+    '''
+    
+    ''' 
+    for n,e in enumerate(l):
+        if e['stationId']=='C0Z150':
+            print(n,e['locationName'])
+    '''
 
-    temp=d['cwbopendata']['location'][0]['weatherElement'][3]['elementValue']
-    loca=d['cwbopendata']['location'][0]['locationName']
-    tp=json.dumps(temp,indent=4)
-    lo=json.dumps(loca,indent=4)
-    print(tp.encode('utf-8').decode('unicode_escape'))
-    print(lo.encode('utf-8').decode('unicode_escape'))
+    elements=[]
 
+    for n in range(0,6):
+        elements.append(d['cwbopendata']['location'][62]['weatherElement'][n]['elementValue']['value'])
+    loca=d['cwbopendata']['location'][62]['locationName']
+    time=d['cwbopendata']['location'][62]['time']['obsTime']
+    #print(tp.encode('utf-8').decode('unicode_escape'))
+    data=[time]+[loca]+elements
+    
+    return data
 
-def gsheet():
+def gsheet(data):
     scope = ['https://spreadsheets.google.com/feeds']
     creds = ServiceAccountCredentials.from_json_keyfile_name('client_secret.json', scope)
     client = gspread.authorize(creds)
@@ -43,8 +51,8 @@ def gsheet():
     sheet = spreadsheet.sheet1
 
     # Extract and print all of the values
-    sheet.update_acell('b2','hello')    
-    rows=sheet.range('A1:C1')
-    print(rows)
+    titles=['時間','站點','海拔','風向','風速','溫度','濕度','氣壓']
+    sheet.append_row(data)
 
-gsheet()
+data=cwb()
+gsheet(data)
